@@ -2,6 +2,7 @@ Register-ArgumentCompleter -CommandName @(
     "Get-AndroidResourceValue"
     "Get-AndroidResourceLayout"
     "Get-AndroidResourceDrawable"
+    "Get-AndroidResourceColor"
 ) `
     -ParameterName Module -ScriptBlock {
 
@@ -49,6 +50,7 @@ Register-ArgumentCompleter -CommandName @(
     "Get-AndroidResourceValue"
     "Get-AndroidResourceLayout"
     "Get-AndroidResourceDrawable"
+    "Get-AndroidResourceColor"
 ) `
     -ParameterName SourceSet -ScriptBlock {
 
@@ -95,6 +97,7 @@ Register-ArgumentCompleter -CommandName @(
     "Get-AndroidResourceValue"
     "Get-AndroidResourceLayout"
     "Get-AndroidResourceDrawable"
+    "Get-AndroidResourceColor"
 ) `
     -ParameterName Qualifier -ScriptBlock {
 
@@ -124,6 +127,7 @@ Register-ArgumentCompleter -CommandName @(
         "Get-AndroidResourceValue" { "values" }
         "Get-AndroidResourceLayout" { "layout" }
         "Get-AndroidResourceDrawable" { "drawable" }
+        "Get-AndroidResourceColor" { "color" }
     }
 
     $resourceFolderPath = "$androidResourcePath/$folderName"
