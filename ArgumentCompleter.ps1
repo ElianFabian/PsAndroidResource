@@ -1,9 +1,12 @@
-Register-ArgumentCompleter -CommandName @(
+$commands = @(
     "Get-AndroidResourceValue"
     "Get-AndroidResourceLayout"
     "Get-AndroidResourceDrawable"
     "Get-AndroidResourceColor"
-) `
+    "Get-AndroidResourceMipmap"
+)
+
+Register-ArgumentCompleter -CommandName $commands `
     -ParameterName Module -ScriptBlock {
 
     param(
@@ -46,12 +49,7 @@ Register-ArgumentCompleter -CommandName @(
 }
 
 
-Register-ArgumentCompleter -CommandName @(
-    "Get-AndroidResourceValue"
-    "Get-AndroidResourceLayout"
-    "Get-AndroidResourceDrawable"
-    "Get-AndroidResourceColor"
-) `
+Register-ArgumentCompleter -CommandName $commands `
     -ParameterName SourceSet -ScriptBlock {
 
     param(
@@ -84,7 +82,7 @@ Register-ArgumentCompleter -CommandName @(
 
     $modulePathFullName = (Resolve-Path $modulePath).Path
 
-    Get-ChildItem -Path $modulePathFullName -Filter "src" -Recurse `
+    Get-ChildItem -Path $modulePathFullName -Filter "src" `
     | ForEach-Object {
         $_.GetDirectories().Name
     } `
@@ -93,12 +91,7 @@ Register-ArgumentCompleter -CommandName @(
     }
 }
 
-Register-ArgumentCompleter -CommandName @(
-    "Get-AndroidResourceValue"
-    "Get-AndroidResourceLayout"
-    "Get-AndroidResourceDrawable"
-    "Get-AndroidResourceColor"
-) `
+Register-ArgumentCompleter -CommandName $commands `
     -ParameterName Qualifier -ScriptBlock {
 
     param(
@@ -115,12 +108,6 @@ Register-ArgumentCompleter -CommandName @(
         return
     }
 
-    $projectPathExits = Test-Path -Path $projectPath
-
-    if (-not $projectPathExits) {
-        return
-    }
-
     $androidResourcePath = Get-AndroidResourcePath -ProjectPath $projectPath -Module $fakeBoundParameters['Module'] -SourceSet $fakeBoundParameters['SourceSet']
 
     $folderName = switch ($commandName) {
@@ -128,10 +115,11 @@ Register-ArgumentCompleter -CommandName @(
         "Get-AndroidResourceLayout" { "layout" }
         "Get-AndroidResourceDrawable" { "drawable" }
         "Get-AndroidResourceColor" { "color" }
+        "Get-AndroidResourceMipmap" { "mipmap" }
     }
 
     $resourceFolderPath = "$androidResourcePath/$folderName"
-    $resourceFolderPathExits = Test-Path -Path $resourceFolderPath
+    $resourceFolderPathExits = Test-Path -Path "$resourceFolderPath-*"
     if (-not $resourceFolderPathExits) {
         return
     }
