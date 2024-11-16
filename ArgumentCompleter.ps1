@@ -1,5 +1,6 @@
 Register-ArgumentCompleter -CommandName @(
     "Get-AndroidResourceValue"
+    "Get-AndroidResourceLayout"
 ) `
     -ParameterName Module -ScriptBlock {
 
@@ -45,6 +46,7 @@ Register-ArgumentCompleter -CommandName @(
 
 Register-ArgumentCompleter -CommandName @(
     "Get-AndroidResourceValue"
+    "Get-AndroidResourceLayout"
 ) `
     -ParameterName SourceSet -ScriptBlock {
 

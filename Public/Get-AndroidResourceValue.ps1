@@ -40,42 +40,10 @@ function Get-AndroidResourceValue {
         [string] $Qualifier = $null
     )
 
-    $projectPathExits = Test-Path -Path $ProjectPath
-    if (-not $projectPathExits) {
-        throw "The provided path '$ProjectPath' does not exist."
-        return
-    }
-
-    $isProjectBuildGradlePresent = Test-Path -Path "$ProjectPath/build.gradle*"
-    $isProjectSettingsGradlePresent = Test-Path -Path "$ProjectPath/settings.gradle*"
-    $isAValidAndroidProject = $isProjectBuildGradlePresent -and $isProjectSettingsGradlePresent
-    if (-not $isAValidAndroidProject) {
-        throw "The provided path '$ProjectPath' is not a valid Android project. It should contain 'build.gradle' and 'settings.gradle' files."
-        return
-    }
-
-    $actualModulePath = "$ProjectPath/$($Module.Replace(':', '/'))"
-    $isAValidModule = Test-Path -Path "$actualModulePath/build.gradle*"
-    if (-not $isAValidModule) {
-        throw "The module '$Module' is not a valid Android module. It should contain a 'build.gradle' file."
-        return
-    }
-
-    $isModulePresent = Test-Path -Path $actualModulePath
-    if (-not $isModulePresent) {
-        throw "The module '$Module' is not present in the project."
-        return
-    }
-
-    $actualSourceSetPath = "$actualModulePath/src/$SourceSet"
-    $isSourceSetPresent = Test-Path -Path $actualSourceSetPath
-    if (-not $isSourceSetPresent) {
-        throw "The source set '$SourceSet' is not present in the module '$Module'."
-        return
-    }
+    $androidResourcePath = Get-AndroidResourcePath -ProjectPath $ProjectPath -Module $Module -SourceSet $SourceSet
 
     $actualQualifier = if (-not [string]::IsNullOrWhiteSpace($Qualifier)) { "-$Qualifier" } else { '' }
-    $valuesPath = "$actualSourceSetPath/res/values$actualQualifier"
+    $valuesPath = "$androidResourcePath/values$actualQualifier"
     $valuesPathExits = Test-Path -Path $valuesPath
     if (-not $valuesPathExits) {
         return
@@ -97,10 +65,10 @@ function Get-AndroidResourceValue {
                 return
             }
 
-            $actualQualifier = if (-not [string]::IsNullOrWhiteSpace($currentQualifier)) { $currentQualifier } else { 'default' }
+            $qualifierName = if (-not [string]::IsNullOrWhiteSpace($currentQualifier)) { $currentQualifier } else { 'default' }
 
             [PSCustomObject]@{
-                Qualifier = $actualQualifier
+                Qualifier = $qualifierName
                 Values    = $values
             }
         }
