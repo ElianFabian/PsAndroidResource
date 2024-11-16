@@ -21,39 +21,7 @@ function Get-AndroidResourceLayout {
         [string] $Qualifier = $null
     )
 
-    $androidResourcePath = Get-AndroidResourcePath -ProjectPath $ProjectPath -Module $Module -SourceSet $SourceSet
+    $PSBoundParameters.Add('Type', 'layout')
 
-    $actualQualifier = if (-not [string]::IsNullOrWhiteSpace($Qualifier)) { "-$Qualifier" } else { '' }
-    $layoutPath = "$androidResourcePath/layout$actualQualifier"
-    $layoutPathExits = Test-Path -Path $layoutPath
-    if (-not $layoutPathExits) {
-        return
-    }
-
-    if (-not $Qualifier -and -not $Default) {
-        return Get-Item -Path "$layoutPath*" `
-        | Where-Object { $_.PSIsContainer } `
-        | ForEach-Object {
-            $currentQualifier = $_.Name.Replace('layout-', '').Replace('layout', '')
-
-            $layouts = if ($currentQualifier) {
-                Get-AndroidResourceLayout -ProjectPath $ProjectPath -Module $Module -SourceSet $SourceSet -Qualifier $currentQualifier
-            }
-            else {
-                Get-AndroidResourceLayout -ProjectPath $ProjectPath -Module $Module -SourceSet $SourceSet -Default
-            }
-            if (-not $layouts) {
-                return
-            }
-            
-            $qualifierName = if ($currentQualifier) { $currentQualifier } else { 'default' }
-
-            [PSCustomObject]@{
-                Qualifier = $qualifierName
-                Layouts = $layouts
-            }
-        }
-    }
-
-    return Get-Item -Path "$layoutPath/*.xml"
+    return Get-AndroidResourceFile @PSBoundParameters
 }
