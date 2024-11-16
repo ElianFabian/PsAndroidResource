@@ -1,6 +1,7 @@
 Register-ArgumentCompleter -CommandName @(
     "Get-AndroidResourceValue"
     "Get-AndroidResourceLayout"
+    "Get-AndroidResourceDrawable"
 ) `
     -ParameterName Module -ScriptBlock {
 
@@ -47,6 +48,7 @@ Register-ArgumentCompleter -CommandName @(
 Register-ArgumentCompleter -CommandName @(
     "Get-AndroidResourceValue"
     "Get-AndroidResourceLayout"
+    "Get-AndroidResourceDrawable"
 ) `
     -ParameterName SourceSet -ScriptBlock {
 
@@ -58,7 +60,7 @@ Register-ArgumentCompleter -CommandName @(
         $fakeBoundParameters
     )
 
-    $projectPath = $fakeBoundParameters['ProjectPath']
+    $projectPath = $fakeBoundParameters['ProjectPath'].TrimEnd('/').TrimEnd('\')
     $module = $fakeBoundParameters['Module']
 
     if (-not $projectPath -or -not $module) {
@@ -83,6 +85,57 @@ Register-ArgumentCompleter -CommandName @(
     Get-ChildItem -Path $modulePathFullName -Filter "src" -Recurse `
     | ForEach-Object {
         $_.GetDirectories().Name
+    } `
+    | Where-Object {
+        $_ -like "$wordToComplete*"
+    }
+}
+
+Register-ArgumentCompleter -CommandName @(
+    "Get-AndroidResourceValue"
+    "Get-AndroidResourceLayout"
+    "Get-AndroidResourceDrawable"
+) `
+    -ParameterName Qualifier -ScriptBlock {
+
+    param(
+        $commandName,
+        $parameterName,
+        $wordToComplete,
+        $commandAst,
+        $fakeBoundParameters
+    )
+
+    $projectPath = $fakeBoundParameters['ProjectPath'].TrimEnd('/').TrimEnd('\')
+
+    if (-not $projectPath) {
+        return
+    }
+
+    $projectPathExits = Test-Path -Path $projectPath
+
+    if (-not $projectPathExits) {
+        return
+    }
+
+    $androidResourcePath = Get-AndroidResourcePath -ProjectPath $projectPath -Module $fakeBoundParameters['Module'] -SourceSet $fakeBoundParameters['SourceSet']
+
+    $folderName = switch ($commandName) {
+        "Get-AndroidResourceValue" { "values" }
+        "Get-AndroidResourceLayout" { "layout" }
+        "Get-AndroidResourceDrawable" { "drawable" }
+    }
+
+    $resourceFolderPath = "$androidResourcePath/$folderName"
+    $resourceFolderPathExits = Test-Path -Path $resourceFolderPath
+    if (-not $resourceFolderPathExits) {
+        return
+    }
+
+    Get-Item -Path "$resourceFolderPath-*" `
+    | Where-Object { $_.PSIsContainer } `
+    | ForEach-Object {
+        $_.Name.Replace("$folderName-", '').Replace($folderName, '')
     } `
     | Where-Object {
         $_ -like "$wordToComplete*"
