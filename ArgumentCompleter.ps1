@@ -67,7 +67,8 @@ Register-ArgumentCompleter -CommandName $commands `
     $buildGradlePath | Split-Path -Parent `
     | ForEach-Object {
         ($_.Replace('\', '/') -replace $projectPathFullName.Replace('\', '/'), '' ).Trim('/').Replace('/', ':')
-    }
+    } `
+    | Sort-Object
 }
 
 Register-ArgumentCompleter -CommandName $commands `
