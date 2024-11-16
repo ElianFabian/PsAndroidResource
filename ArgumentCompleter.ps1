@@ -6,6 +6,41 @@ $commands = @(
     "Get-AndroidResourceMipmap"
 )
 
+function GetBuildGradlePath {
+    param (
+        [Parameter(Mandatory)]
+        [string] $LiteralProjectPath,
+
+        [Parameter(Mandatory)]
+        [string] $LiteralCurrentPath
+    )
+
+    $trimmedPath = (Resolve-Path $LiteralCurrentPath.TrimEnd('/').TrimEnd('\')).Path
+    $trimmedProjectPath = (Resolve-Path $LiteralProjectPath.TrimEnd('/').TrimEnd('\')).Path
+
+    foreach ($item in (Get-ChildItem -LiteralPath $trimmedPath | Sort-Object -Property { $_.PSIsContainer })) {
+        if ($item.PSIsContainer -and ($item.Name -eq 'build' -or $item.Name -eq '.gradle' -or $item.Name -eq '.idea')) {
+            continue
+        }
+
+        if ($item.PSIsContainer) {
+            $buildGradlePath = GetBuildGradlePath -LiteralProjectPath $LiteralProjectPath -LiteralCurrentPath $item.FullName
+            if ($buildGradlePath) {
+                $buildGradlePath
+            }
+        }
+        else {
+            if ($item.Name -like 'build.gradle*') {
+                if ($item.Directory.FullName -eq $trimmedProjectPath) {
+                    continue
+                }
+                $item
+                break
+            }
+        }
+    }
+}
+
 Register-ArgumentCompleter -CommandName $commands `
     -ParameterName Module -ScriptBlock {
 
@@ -29,25 +64,14 @@ Register-ArgumentCompleter -CommandName $commands `
     }
 
     $projectPathFullName = (Resolve-Path $projectPath).Path
-    Get-ChildItem -Path $projectPathFullName -Filter "build.gradle*" -Recurse `
-    | Where-Object { $_.FullName -ne $projectPathFullName } `
+
+    $buildGradlePath = GetBuildGradlePath -LiteralProjectPath $projectPathFullName -LiteralCurrentPath $projectPathFullName
+
+    $buildGradlePath | Split-Path -Parent `
     | ForEach-Object {
-        if ($_.Directory.FullName -eq $projectPathFullName) {
-            return
-        }
-        $directory = $_.Directory
-        if ($directory.Parent.FullName -eq $projectPathFullName) {
-            $directory.Name
-        }
-        else {
-            "$($directory.Parent.Name):$($directory.Name)" 
-        }
-    } `
-    | Where-Object {
-        $_ -like "$wordToComplete*"
+        ($_.Replace('\', '/') -replace $projectPathFullName.Replace('\', '/'), '' ).Trim('/').Replace('/', ':')
     }
 }
-
 
 Register-ArgumentCompleter -CommandName $commands `
     -ParameterName SourceSet -ScriptBlock {
