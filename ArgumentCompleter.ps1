@@ -62,9 +62,8 @@ Register-ArgumentCompleter -CommandName $commands `
 
     $projectPathFullName = (Resolve-Path $projectPath).Path
 
-    $buildGradlePath = GetBuildGradlePath -LiteralProjectPath $projectPathFullName -LiteralCurrentPath $projectPathFullName
-
-    $buildGradlePath | Split-Path -Parent `
+    GetBuildGradlePath -LiteralProjectPath $projectPathFullName -LiteralCurrentPath $projectPathFullName `
+    | Split-Path -Parent `
     | ForEach-Object {
         ($_.Replace('\', '/') -replace $projectPathFullName.Replace('\', '/'), '' ).Trim('/').Replace('/', ':')
     } `
