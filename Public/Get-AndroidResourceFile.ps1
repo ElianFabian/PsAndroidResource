@@ -14,12 +14,6 @@ function Get-AndroidResourceFile {
         [Parameter(Mandatory)]
         [string] $SourceSet,
 
-        [Parameter(ParameterSetName = 'Qualifier-Default')]
-        [switch] $Default,
-
-        [Parameter(ParameterSetName = 'Qualifier')]
-        [string] $Qualifier = $null,
-
         [ValidateSet(
             'color',
             'drawable',
@@ -27,7 +21,13 @@ function Get-AndroidResourceFile {
             'mipmap'
         )]
         [Parameter(Mandatory)]
-        [string] $Type
+        [string] $Type,
+
+        [Parameter(ParameterSetName = 'Qualifier-Default')]
+        [switch] $Default,
+
+        [Parameter(ParameterSetName = 'Qualifier')]
+        [string] $Qualifier = $null
     )
 
     $androidResourcePath = Get-AndroidResourcePath -ProjectPath $ProjectPath -Module $Module -SourceSet $SourceSet

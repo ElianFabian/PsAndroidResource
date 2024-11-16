@@ -1,9 +1,6 @@
 $commands = @(
     "Get-AndroidResourceValue"
-    "Get-AndroidResourceLayout"
-    "Get-AndroidResourceDrawable"
-    "Get-AndroidResourceColor"
-    "Get-AndroidResourceMipmap"
+    "Get-AndroidResourceFile"
 )
 
 function GetBuildGradlePath {
@@ -135,11 +132,8 @@ Register-ArgumentCompleter -CommandName $commands `
     $androidResourcePath = Get-AndroidResourcePath -ProjectPath $projectPath -Module $fakeBoundParameters['Module'] -SourceSet $fakeBoundParameters['SourceSet']
 
     $folderName = switch ($commandName) {
-        "Get-AndroidResourceValue" { "values" }
-        "Get-AndroidResourceLayout" { "layout" }
-        "Get-AndroidResourceDrawable" { "drawable" }
-        "Get-AndroidResourceColor" { "color" }
-        "Get-AndroidResourceMipmap" { "mipmap" }
+        'Get-AndroidResourceValue' { 'values' }
+        'Get-AndroidResourceFile' { $fakeBoundParameters['Type'] }
     }
 
     $resourceFolderPath = "$androidResourcePath/$folderName"
