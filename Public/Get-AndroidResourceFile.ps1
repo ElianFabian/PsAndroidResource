@@ -23,47 +23,54 @@ function Get-AndroidResourceFile {
         [Parameter(Mandatory)]
         [string] $Type,
 
-        [Parameter(ParameterSetName = 'Qualifier-Default')]
-        [switch] $Default,
-
         [Parameter(ParameterSetName = 'Qualifier')]
-        [string] $Qualifier = $null
+        [string[]] $Qualifier,
+
+        [Parameter(ParameterSetName = 'Qualifier-Default')]
+        [switch] $Default
     )
 
     $androidResourcePath = Get-AndroidResourcePath -ProjectPath $ProjectPath -Module $Module -SourceSet $SourceSet
 
-    $actualQualifier = if (-not [string]::IsNullOrWhiteSpace($Qualifier)) { "-$Qualifier" } else { '' }
-    $resourceTypePath = "$androidResourcePath/$Type$actualQualifier"
-    $resourceTypePathExits = Test-Path -Path "$resourceTypePath*"
-    if (-not $resourceTypePathExits) {
-        return
+    # To force enter the list at least once, even if no value was given, it means we return all available qualifiers.
+    if (-not $Qualifier) {
+        $Qualifier = $null
     }
 
-    if (-not $Qualifier -and -not $Default) {
-        return Get-Item -Path "$resourceTypePath*" `
-        | Where-Object { $_.PSIsContainer } `
-        | ForEach-Object {
-            $currentQualifier = $_.Name.Replace("$Type-", '').Replace($Type, '')
+    $Qualifier | ForEach-Object {
+        $actualQualifier = if (-not [string]::IsNullOrWhiteSpace($_)) { "-$_" } else { '' }
+        $resourceTypePath = "$androidResourcePath/$Type$actualQualifier"
+        $resourceTypePathExits = Test-Path -Path "$resourceTypePath*"
+        if (-not $resourceTypePathExits) {
+            return
+        }
 
-            $values = if ($currentQualifier) {
-                Get-AndroidResourceFile -ProjectPath $ProjectPath -Module $Module -SourceSet $SourceSet -Qualifier $currentQualifier -Type $Type
-            }
-            else {
-                Get-AndroidResourceFile -ProjectPath $ProjectPath -Module $Module -SourceSet $SourceSet -Default -Type $Type
-            }
+        if (-not $_ -and -not $Default) {
+            return Get-Item -Path "$resourceTypePath*" `
+            | Where-Object { $_.PSIsContainer } `
+            | ForEach-Object {
+                $currentQualifier = $_.Name.Replace("$Type-", '').Replace($Type, '')
 
-            if (-not $values) {
-                return
-            }
+                $values = if ($currentQualifier) {
+                    Get-AndroidResourceFile -ProjectPath $ProjectPath -Module $Module -SourceSet $SourceSet -Qualifier $currentQualifier -Type $Type
+                }
+                else {
+                    Get-AndroidResourceFile -ProjectPath $ProjectPath -Module $Module -SourceSet $SourceSet -Default -Type $Type
+                }
 
-            $qualifierName = if ($currentQualifier) { $currentQualifier } else { 'default' }
+                if (-not $values) {
+                    return
+                }
 
-            [PSCustomObject]@{
-                Qualifier = $qualifierName
-                Values    = $values
+                $qualifierName = if ($currentQualifier) { $currentQualifier } else { 'default' }
+
+                [PSCustomObject]@{
+                    Qualifier = $qualifierName
+                    Values    = $values
+                }
             }
         }
-    }
 
-    return Get-Item -Path "$resourceTypePath/*"
+        Get-Item -Path "$resourceTypePath/*"
+    }
 }

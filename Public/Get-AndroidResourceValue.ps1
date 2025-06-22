@@ -10,7 +10,7 @@ function Get-AndroidResourceValue {
 
         [Parameter(Mandatory)]
         [string] $Module,
-        
+
         [Parameter(Mandatory)]
         [string] $SourceSet,
 
@@ -33,46 +33,53 @@ function Get-AndroidResourceValue {
         [Parameter(Mandatory)]
         [string] $Type,
 
-        [Parameter(ParameterSetName = 'Qualifier-Default')]
-        [switch] $Default,
-
         [Parameter(ParameterSetName = 'Qualifier')]
-        [string] $Qualifier = $null
+        [string[]] $Qualifier,
+
+        [Parameter(ParameterSetName = 'Qualifier-Default')]
+        [switch] $Default
     )
 
     $androidResourcePath = Get-AndroidResourcePath -ProjectPath $ProjectPath -Module $Module -SourceSet $SourceSet
 
-    $actualQualifier = if (-not [string]::IsNullOrWhiteSpace($Qualifier)) { "-$Qualifier" } else { '' }
-    $valuesPath = "$androidResourcePath/values$actualQualifier"
-    $valuesPathExits = Test-Path -Path $valuesPath
-    if (-not $valuesPathExits) {
-        return
+    # To force enter the list at least once, even if no value was given, it means we return all available qualifiers.
+    if (-not $Qualifier) {
+        $Qualifier = $null
     }
 
-    if (-not $Qualifier -and -not $Default) {
-        return Get-Item -Path "$valuesPath*" `
-        | Where-Object { $_.PSIsContainer } `
-        | ForEach-Object {
-            $currentQualifier = $_.Name.Replace('values-', '').Replace('values', '')
+    $Qualifier | ForEach-Object {
+        $actualQualifier = if (-not [string]::IsNullOrWhiteSpace($_)) { "-$_" } else { '' }
+        $valuesPath = "$androidResourcePath/values$actualQualifier"
+        $valuesPathExits = Test-Path -Path $valuesPath
+        if (-not $valuesPathExits) {
+            return
+        }
 
-            $values = if ($currentQualifier) {
-                Get-AndroidResourceValue -ProjectPath $ProjectPath -Module $Module -SourceSet $SourceSet -Type $Type -Qualifier $currentQualifier
-            }
-            else {
-                Get-AndroidResourceValue -ProjectPath $ProjectPath -Module $Module -SourceSet $SourceSet -Type $Type -Default
-            }
-            if (-not $values) {
-                return
-            }
+        if (-not $_ -and -not $Default) {
+            return Get-Item -Path "$valuesPath*" `
+            | Where-Object { $_.PSIsContainer } `
+            | ForEach-Object {
+                $currentQualifier = $_.Name.Replace('values-', '').Replace('values', '')
 
-            $qualifierName = if (-not [string]::IsNullOrWhiteSpace($currentQualifier)) { $currentQualifier } else { 'default' }
+                $values = if ($currentQualifier) {
+                    Get-AndroidResourceValue -ProjectPath $ProjectPath -Module $Module -SourceSet $SourceSet -Type $Type -Qualifier $currentQualifier
+                }
+                else {
+                    Get-AndroidResourceValue -ProjectPath $ProjectPath -Module $Module -SourceSet $SourceSet -Type $Type -Default
+                }
+                if (-not $values) {
+                    return
+                }
 
-            [PSCustomObject]@{
-                Qualifier = $qualifierName
-                Values    = $values
+                $qualifierName = if (-not [string]::IsNullOrWhiteSpace($currentQualifier)) { $currentQualifier } else { 'default' }
+
+                [PSCustomObject]@{
+                    Qualifier = $qualifierName
+                    Values    = $values
+                }
             }
         }
-    }
 
-    return Select-Xml -Path "$valuesPath/*.xml" -XPath "//$Type" | ForEach-Object { $_.Node }
+        Select-Xml -Path "$valuesPath/*.xml" -XPath "//$Type" | ForEach-Object { $_.Node }
+    }
 }
